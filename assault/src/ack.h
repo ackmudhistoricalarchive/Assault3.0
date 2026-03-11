@@ -495,6 +495,10 @@ struct  descriptor_data
     unsigned char *     out_compress_buf;
     // End MCCP
     bool            mxp;                                    /* player using MXP flag */
+    bool            websocket;                              /* RFC6455 connection */
+    int             ws_handshake_done;
+    int             ws_rawlen;
+    unsigned char   ws_rawbuf[4 * MAX_INPUT_LENGTH];
 };
 
 #define DESC_FLAG_PASSTHROUGH 1                             /* Used when data is being passed to */
