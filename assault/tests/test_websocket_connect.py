@@ -17,6 +17,9 @@ ACK_BIN = SRC_DIR / "ack"
 class WebSocketIntegrationTest(unittest.TestCase):
     def setUp(self) -> None:
         self.port = 4124
+        self.player_name = "WsCodex"
+        self.player_password = "wsitestpass"
+
         self.server = subprocess.Popen(
             [str(ACK_BIN), str(self.port)],
             cwd=str(AREA_DIR),
@@ -36,6 +39,10 @@ class WebSocketIntegrationTest(unittest.TestCase):
                 self.server.wait(timeout=5)
         if self.server.stdout is not None:
             self.server.stdout.close()
+
+        player_file = AREA_DIR / "player" / self.player_name[0].lower() / self.player_name
+        if player_file.exists():
+            player_file.unlink()
 
     def _wait_for_port(self, timeout: float = 20.0) -> None:
         deadline = time.time() + timeout
@@ -62,11 +69,12 @@ class WebSocketIntegrationTest(unittest.TestCase):
         header_blob, _, remainder = data.partition(b"\r\n\r\n")
         return header_blob.decode("ascii", errors="ignore"), remainder
 
-    def _recv_ws_text_until(self, sock: socket.socket, needle: str, timeout: float = 20.0, initial: bytes = b"") -> str:
+    def _recv_ws_text_until(self, sock: socket.socket, needle: str, timeout: float = 25.0, initial: bytes = b"") -> str:
         deadline = time.time() + timeout
         buf = ""
         pending = bytearray(initial)
         sock.settimeout(1.0)
+
         while time.time() < deadline:
             while len(pending) < 2:
                 try:
@@ -75,13 +83,12 @@ class WebSocketIntegrationTest(unittest.TestCase):
                     break
             if len(pending) < 2:
                 continue
-            header = bytes(pending[:2])
+
+            fin_opcode, length_byte = pending[0], pending[1]
             del pending[:2]
-            if not header:
-                break
-            fin_opcode, length_byte = header[0], header[1]
             opcode = fin_opcode & 0x0F
             payload_len = length_byte & 0x7F
+
             if payload_len == 126:
                 while len(pending) < 2:
                     pending.extend(sock.recv(4096))
@@ -92,6 +99,7 @@ class WebSocketIntegrationTest(unittest.TestCase):
                     pending.extend(sock.recv(4096))
                 payload_len = struct.unpack("!Q", bytes(pending[:8]))[0]
                 del pending[:8]
+
             masked = bool(length_byte & 0x80)
             if masked:
                 while len(pending) < 4:
@@ -100,14 +108,16 @@ class WebSocketIntegrationTest(unittest.TestCase):
                 del pending[:4]
             else:
                 mask = b""
+
             while len(pending) < payload_len:
                 pending.extend(sock.recv(4096))
             payload = bytes(pending[:payload_len])
             del pending[:payload_len]
+
             if masked:
                 payload = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
 
-            if opcode == 0x1:  # text
+            if opcode == 0x1:
                 buf += payload.decode(errors="ignore")
                 if needle in buf:
                     return buf
@@ -122,16 +132,21 @@ class WebSocketIntegrationTest(unittest.TestCase):
         first = 0x80 | (opcode & 0x0F)
         mask = os.urandom(4)
         length = len(payload)
+
         if length < 126:
             header = bytes([first, 0x80 | length])
         elif length <= 0xFFFF:
             header = bytes([first, 0x80 | 126]) + struct.pack("!H", length)
         else:
             header = bytes([first, 0x80 | 127]) + struct.pack("!Q", length)
+
         masked_payload = bytes(b ^ mask[i % 4] for i, b in enumerate(payload))
         sock.sendall(header + mask + masked_payload)
 
-    def test_websocket_handshake_and_greeting(self) -> None:
+    def _send_ws_text(self, sock: socket.socket, text: str) -> None:
+        self._send_ws_frame(sock, 0x1, text.encode())
+
+    def test_websocket_handshake_and_full_login(self) -> None:
         with socket.create_connection(("127.0.0.1", self.port), timeout=5) as sock:
             ws_key = base64.b64encode(os.urandom(16)).decode("ascii")
             req = (
@@ -153,7 +168,37 @@ class WebSocketIntegrationTest(unittest.TestCase):
             self.assertIn(f"Sec-WebSocket-Accept: {expected_accept}", headers)
 
             self._recv_ws_text_until(sock, "your name, recruit", initial=leftover)
+            self._send_ws_text(sock, self.player_name + "\n")
 
+            self._recv_ws_text_until(sock, "Did I get that right")
+            self._send_ws_text(sock, "y\n")
+
+            self._recv_ws_text_until(sock, "desired password")
+            self._send_ws_text(sock, self.player_password + "\n")
+
+            self._recv_ws_text_until(sock, "retype your password")
+            self._send_ws_text(sock, self.player_password + "\n")
+
+            self._recv_ws_text_until(sock, "(Y)es, (N)o, (M)ap colors only")
+            self._send_ws_text(sock, "n\n")
+
+            self._recv_ws_text_until(sock, "Are you (M)ale or (F)emale")
+            self._send_ws_text(sock, "m\n")
+
+            self._recv_ws_text_until(sock, "Which would you like to have")
+            self._send_ws_text(sock, "Gold\n")
+
+            self._recv_ws_text_until(sock, "Please select: Normal or Basic play mode")
+            self._send_ws_text(sock, "Normal\n")
+
+            self._recv_ws_text_until(sock, "Pick your class")
+            self._send_ws_text(sock, "Engineer\n")
+
+            self._recv_ws_text_until(sock, "Are you allowed to have any more characters")
+            self._send_ws_text(sock, "n\n")
+
+            self._recv_ws_text_until(sock, "Useful Commands")
+            self._send_ws_text(sock, "quit\n")
             self._send_ws_frame(sock, 0x8, b"")
 
 
