@@ -452,6 +452,14 @@ struct  time_info_data
     int         year;
 };
 
+struct  weather_data
+{
+    int         mmhg;
+    int         change;
+    int         sky;
+    int         sunlight;
+};
+
 /*
  * Descriptor (channel) structure.
  */
