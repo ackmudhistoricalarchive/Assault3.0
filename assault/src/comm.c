@@ -148,7 +148,7 @@ int     bind            args( ( int s, struct sockaddr *name, int namelen ) );
 void    bzero           args( ( char *b, int length ) );
 int     getpeername     args( ( int s, struct sockaddr *name, int *namelen ) );
 int     getsockname     args( ( int s, struct sockaddr *name, int *namelen ) );
-int     gettimeofday    args( ( struct timeval *tp, struct timezone *tzp ) );
+int     gettimeofday    args( ( struct timeval *tp, void *tzp ) );
 int     listen          args( ( int s, int backlog ) );
 int     setsockopt      args( ( int s, int level, int optname, void *optval,
 int optlen ) );
@@ -166,7 +166,7 @@ int     bind            args( ( int s, const void *addr, int addrlen ) );
 void    bzero           args( ( char *b, int length ) );
 int     getpeername     args( ( int s, void *addr, int *addrlen ) );
 int     getsockname     args( ( int s, void *name, int *addrlen ) );
-int     gettimeofday    args( ( struct timeval *tp, struct timezone *tzp ) );
+int     gettimeofday    args( ( struct timeval *tp, void *tzp ) );
 int     listen          args( ( int s, int backlog ) );
 int     setsockopt      args( ( int s, int level, int optname,
 const void *optval, int optlen ) );
@@ -184,7 +184,7 @@ int     close           args( ( int fd ) );
 int     getpeername     args( ( int s, struct sockaddr *name, int *namelen ) );
 int     getsockname     args( ( int s, struct sockaddr *name, int *namelen ) );
 */
-int     gettimeofday    args( ( struct timeval *tp, struct timezone *tzp ) );
+int     gettimeofday    args( ( struct timeval *tp, void *tzp ) );
 /*
 int     listen          args( ( int s, int backlog ) );
 */
@@ -218,7 +218,7 @@ extern  int             errno;
 #endif
 
 #if     defined(MSDOS)
-int     gettimeofday    args( ( struct timeval *tp, struct timezone *tzp ) );
+int     gettimeofday    args( ( struct timeval *tp, void *tzp ) );
 int     kbhit           args( ( void ) );
 #endif
 
@@ -244,7 +244,7 @@ int     close           args( ( int fd ) );
 int     fcntl           args( ( int fd, int cmd, int arg ) );
 int     getpeername     args( ( int s, struct sockaddr *name, int *namelen ) );
 int     getsockname     args( ( int s, struct sockaddr *name, int *namelen ) );
-int     gettimeofday    args( ( struct timeval *tp, struct timezone *tzp ) );
+int     gettimeofday    args( ( struct timeval *tp, void *tzp ) );
 #if     !defined(htons)
 u_short htons           args( ( u_short hostshort ) );
 #endif
@@ -275,7 +275,7 @@ int     getsockname     args( ( int s, struct sockaddr *name, int *namelen ) );
 #if defined(SYSV)
 int gettimeofday    args( ( struct timeval *tp, void *tzp ) );
 #else
-int     gettimeofday    args( ( struct timeval *tp, struct timezone *tzp ) );
+int     gettimeofday    args( ( struct timeval *tp, void *tzp ) );
 #endif
 int     listen          args( ( int s, int backlog ) );
 int     select          args( ( int width, fd_set *readfds, fd_set *writefds,
@@ -301,7 +301,7 @@ void    bzero           args( ( char *b, int length ) );
 int     close           args( ( int fd ) );
 int     getpeername     args( ( int s, struct sockaddr *name, int *namelen ) );
 int     getsockname     args( ( int s, struct sockaddr *name, int *namelen ) );
-int     gettimeofday    args( ( struct timeval *tp, struct timezone *tzp ) );
+int     gettimeofday    args( ( struct timeval *tp, void *tzp ) );
 int     listen          args( ( int s, int backlog ) );
 int     read            args( ( int fd, char *buf, int nbyte ) );
 int     select          args( ( int width, fd_set *readfds, fd_set *writefds,

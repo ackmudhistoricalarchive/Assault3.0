@@ -86,6 +86,7 @@ char *initial( const char *str )
     static char strint[ MAX_STRING_LENGTH ];
 
     strint[0] = LOWER( str[ 0 ] );
+    strint[1] = '\0';
     return strint;
 
 }
