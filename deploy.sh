@@ -6,8 +6,8 @@ SSH="ssh -o StrictHostKeyChecking=no"
 cd assault/src
 make
 cd -
-# Deploy binary
+# Stop service, deploy binary, restart
+$SSH $TARGET "sudo systemctl stop mud"
 scp -o StrictHostKeyChecking=no assault/src/ack $TARGET:/opt/mud/src/assault/src/ack
-# Restart service
-$SSH $TARGET "sudo systemctl restart mud"
+$SSH $TARGET "sudo systemctl start mud"
 echo "Deployed to Assault3.0"
